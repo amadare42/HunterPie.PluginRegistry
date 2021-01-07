@@ -1,0 +1,29 @@
+[{
+  "InternalName": "TwitchIntegration",
+  "Readme": "https://raw.githubusercontent.com/Haato3o/HunterPie.Plugins/master/TwitchIntegration/README.md",
+  "Module": "https://raw.githubusercontent.com/Haato3o/HunterPie.Plugins/master/TwitchIntegration/module.json"
+}, {
+  "InternalName": "DiscordWebhook",
+  "Readme": "https://raw.githubusercontent.com/Haato3o/HunterPie.Plugins/master/DiscordWebhook/README.md",
+  "Module": "https://raw.githubusercontent.com/Haato3o/HunterPie.Plugins/master/DiscordWebhook/module.json"
+}, {
+  "InternalName": "DamageChat",
+  "Readme": "https://raw.githubusercontent.com/ricochhet/HunterPie.DamageChat/master/README.md",
+  "Module": "https://raw.githubusercontent.com/ricochhet/HunterPie.DamageChat/master/binaries/module.json"
+}, {
+  "InternalName": "SyncPlugin",
+  "Readme": "https://raw.githubusercontent.com/Kaedras/HunterPie-SyncPlugin/master/README.md",
+  "Module": "https://raw.githubusercontent.com/Kaedras/HunterPie-SyncPlugin/master/module.json"
+}, {
+  "InternalName": "Plugin.Sync",
+  "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.SyncPlugin/master/readme.md",
+  "Module": "https://raw.githubusercontent.com/amadare42/HunterPie.SyncPlugin/master/Plugin.Sync/bin/Release/module.json"
+}, {
+  "InternalName": "MHWItemBoxTracker",
+  "Readme": "https://raw.githubusercontent.com/SupaStuff/MHWItemBoxTracker/master/README.md",
+  "Module": "https://github.com/SupaStuff/MHWItemBoxTracker/releases/latest/download/module.json"
+}, {
+  "InternalName": "Plugin.MonsterSizeBar",
+  "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.MonsterSizeBarPlugin/master/readme.md",
+  "Module": "https://raw.githubusercontent.com/amadare42/HunterPie.MonsterSizeBarPlugin/master/Plugin.MonsterSizeBar/bin/Release/module.json"
+}]
