@@ -16,7 +16,8 @@
   "Module": "https://raw.githubusercontent.com/Kaedras/HunterPie-SyncPlugin/master/module.json"
 }, {
   "InternalName": "Plugin.Sync",
-  "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.SyncPlugin/master/readme.md",
+  "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.SyncPlugin/master/readme_user.md",
+  "ImageUrl": "https://raw.githubusercontent.com/amadare42/HunterPie.SyncPlugin/master/readme/icon.png",
   "Module": "https://raw.githubusercontent.com/amadare42/HunterPie.SyncPlugin/master/Plugin.Sync/bin/Release/module.json"
 }, {
   "InternalName": "MHWItemBoxTracker",
@@ -24,6 +25,7 @@
   "Module": "https://github.com/SupaStuff/MHWItemBoxTracker/releases/latest/download/module.json"
 }, {
   "InternalName": "Plugin.MonsterSizeBar",
-  "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.MonsterSizeBarPlugin/master/readme.md",
+  "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.MonsterSizeBarPlugin/master/brief_readme.md",
+  "ImageUrl": "https://github.com/amadare42/HunterPie.MonsterSizeBarPlugin/raw/master/Plugin.MonsterSizeBar/icon.png",
   "Module": "https://raw.githubusercontent.com/amadare42/HunterPie.MonsterSizeBarPlugin/master/Plugin.MonsterSizeBar/bin/Release/module.json"
 }]
