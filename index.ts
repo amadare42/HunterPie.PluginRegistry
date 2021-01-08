@@ -11,9 +11,11 @@ import { promisify } from 'util';
 let lastUpdateTime = 0;
 
 const port = process.env.PORT || 5002;
-const baseAddress = process.env.BASE_ADDRESS || `http://localhost:${port}`;
+const baseAddress = process.env.HEROKU_APP_NAME
+    ? `https://${process.env.HEROKU_APP_NAME}.herokuapp.com`
+    : `http://localhost:${port}`;
 const updateIntervalSec = process.env.UPDATE_INTERVAL_SEC ? parseInt(process.env.UPDATE_INTERVAL_SEC) : 100;
-const redisClient = redis.createClient(process.env.REDIS_URL);
+const redisClient = redis.createClient(process.env.REDISTOGO_URL);
 
 // "Thank you", official redis library that doesn't support promises in 2021 -_-
 const redisGet = bind(promisify(redisClient.get), redisClient);
