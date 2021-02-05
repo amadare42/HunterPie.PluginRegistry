@@ -28,4 +28,9 @@
   "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.MonsterSizeBarPlugin/master/brief_readme.md",
   "ImageUrl": "https://github.com/amadare42/HunterPie.MonsterSizeBarPlugin/raw/master/Plugin.MonsterSizeBar/icon.png",
   "Module": "https://raw.githubusercontent.com/amadare42/HunterPie.MonsterSizeBarPlugin/master/Plugin.MonsterSizeBar/bin/Release/module.json"
+}, {
+  "InternalName": "DecorationSearch",
+  "Readme": "https://raw.githubusercontent.com/Haato3o/DecorationSearch/master/README.md",
+  "ImageUrl": "https://raw.githubusercontent.com/Haato3o/DecorationSearch/master/DecorationSearch/Assets/icon.png",
+  "Module": "https://github.com/Haato3o/DecorationSearcher/releases/latest/download/module.json"
 }]
