@@ -18,6 +18,9 @@ const updateIntervalSec = process.env.UPDATE_INTERVAL_SEC ? parseInt(process.env
 const redisClient = redis.createClient(process.env.REDISTOGO_URL);
 
 // "Thank you", official redis library that doesn't support promises in 2021 -_-
+function bind<T extends Function>(fn: Function, obj: any) {
+    return fn.bind(obj) as T;
+}
 const redisGet = bind(promisify(redisClient.get), redisClient);
 const redisSet = bind(promisify(redisClient.set), redisClient);
 
@@ -28,46 +31,25 @@ const proxyPlugins = new Map<string, PluginInfo>();
 const app = express();
 app.set('json spaces', 2);
 
-function pluginPassThrough(name: string, res: Readable) {
+/**
+ * Using module.json stream to update cache data.
+ * @param res module.json stream (json string of {@type Module})
+*/
+function pluginPassThrough(res: Readable) {
     const copyStream = res.pipe(new PassThrough());
     const chunks = []
     copyStream.on('data', c => chunks.push(c))
     copyStream.on('end', async () => {
         const jsonString = Buffer.concat(chunks).toString('utf8');
         const plugin = JSON.parse(jsonString) as Module;
-        await updatePluginMetadata(plugin.Name);
+        await updateDefaultPluginCache(plugin.Name);
     });
 }
 
-async function updatePluginMetadata(internalName: string) {
-    const entry = registry.find(r => r.InternalName == internalName);
-    try {
-        const rsp = await axios.get(entry.Module);
-        plugins.set(entry.InternalName, {
-            ...entry,
-            DisplayName: rsp.data.DisplayName || rsp.data.Name || entry.InternalName,
-            Description: rsp.data.Description || null,
-            Author: rsp.data.Author || null,
-            Version: rsp.data.Version || '0.0',
-            MinVersion: rsp.data.Update?.MinimumVersion || '0.0',
-            Downloads: await getDownloads(entry.InternalName)
-        });
-    } catch (e) {
-        console.error(`Update plugin '${internalName}' failed:`, e.toString());
-
-        plugins.set(internalName, {
-            ...entry,
-            DisplayName: entry.InternalName,
-            Description: null,
-            Author: null,
-            Version: '0.0',
-            MinVersion: '0.0',
-            Downloads: await getDownloads(entry.InternalName)
-        });
-    }
-    updateProxyPluginMetadata(internalName);
-}
-
+/**
+ * Get total downloads count for plugin.
+ * @param internalName
+ */
 async function getDownloads(internalName: string) {
     try {
         let val = parseInt(await redisGet(`installs:${ internalName }`));
@@ -80,6 +62,13 @@ async function getDownloads(internalName: string) {
     }
 }
 
+/**
+ * Proxy request http request to url.
+ * @param url target url
+ * @param client_req original client request stream
+ * @param client_res original client response stream
+ * @param cb passthgough handler
+ */
 async function proxyGet(url: string, client_req: express.Request, client_res: express.Response, cb?: (res: IncomingMessage) => void) {
     console.log("Proxying request to " + url);
 
@@ -96,19 +85,60 @@ async function proxyGet(url: string, client_req: express.Request, client_res: ex
     });
 }
 
-
-async function updatePluginsMap() {
+/**
+ * Download and update plugins cache.
+ */
+async function updatePluginCache() {
     for (let plugin of registry) {
-        await updatePluginMetadata(plugin.InternalName);
+        await updateDefaultPluginCache(plugin.InternalName);
     }
     for (let name of registry.map(r => r.InternalName)) {
-        updateProxyPluginMetadata(name);
+        updateProxyPluginCache(name);
     }
     lastUpdateTime = Date.now();
     console.log("registry updated", Array.from(plugins.values()));
 }
 
-function updateProxyPluginMetadata(internalName: string) {
+/**
+ * Download plugin's module.json download to update cached data.
+ * @param internalName plugin name
+ */
+async function updateDefaultPluginCache(internalName: string) {
+    const entry = registry.find(r => r.InternalName == internalName);
+    try {
+        const rsp = await axios.get(entry.Module);
+        const module = rsp.data as Module;
+        plugins.set(entry.InternalName, {
+            ...entry,
+            DisplayName: module.DisplayName || module.Name || entry.InternalName,
+            Description: module.Description || null,
+            Author: module.Author || null,
+            Version: module.Version || '0.0',
+            MinVersion: module.Update?.MinimumVersion || '0.0',
+            Downloads: await getDownloads(entry.InternalName),
+            ImageUrl: module.ImageUrl || entry.ImageUrl,
+            ReleaseDate: module.ReleaseDate || entry.ReleaseDate
+        });
+    } catch (e) {
+        console.error(`Update plugin '${internalName}' failed:`, e.toString());
+
+        plugins.set(internalName, {
+            ...entry,
+            DisplayName: entry.InternalName,
+            Description: null,
+            Author: null,
+            Version: '0.0',
+            MinVersion: '0.0',
+            Downloads: await getDownloads(entry.InternalName)
+        });
+    }
+    updateProxyPluginCache(internalName);
+}
+
+/**
+ * Update plugin cache for proxy users. Proxy {@type PluginInfo} should have links to proxy links instead of default ones.
+ */
+function updateProxyPluginCache(internalName: string) {
     const plugin = plugins.get(internalName);
     if (!plugin) return;
     proxyPlugins.set(internalName, {
@@ -117,11 +147,15 @@ function updateProxyPluginMetadata(internalName: string) {
         // readme address isn't saved anywhere in HunterPie, so we could just override path to it when proxy enabled
         Readme: [baseAddress, 'plugin', internalName, 'readme', getLastUrlPart(plugin.Readme)].join('/'),
 
-        // we could potentially override module.json path as well, but then client will loose original update url information
+        // we could potentially override module.json path as well, but then client will lose original update url information,
+        // so we don't do this
         // Module: [baseAddress, 'plugin', key, 'module', getLastUrlPart(plugin.Module)].join('/'),
     })
 }
 
+/**
+ * Proxy download plugin file.
+ */
 app.get('/plugin/:pluginName/:part/*', async (rq, rs) => {
     await new Promise(r => setTimeout(r, 2000));
     const { pluginName, part } = rq.params;
@@ -147,7 +181,7 @@ app.get('/plugin/:pluginName/:part/*', async (rq, rs) => {
         case 'module': {
             let url = [trim(removeUrlLastPart(plugin.Module), '/'), rest].join("/");
             if (url.toLowerCase() == plugin.Module.toLowerCase()) {
-                await proxyGet(plugin.Module, rq, rs, r => pluginPassThrough(pluginName, r));
+                await proxyGet(plugin.Module, rq, rs, pluginPassThrough);
             } else {
                 await proxyGet(url, rq, rs);
             }
@@ -159,10 +193,9 @@ app.get('/plugin/:pluginName/:part/*', async (rq, rs) => {
     }
 });
 
-function bind<T extends Function>(fn: Function, obj: any) {
-    return fn.bind(obj) as T;
-}
-
+/**
+ * Report plugin installation.
+ */
 app.post('/plugin/:pluginName/install', async (rq, rs) => {
     if (!registry.some(p => p.InternalName == rq.params.pluginName)) {
         rs.send('Plugin not found')
@@ -176,14 +209,17 @@ app.post('/plugin/:pluginName/install', async (rq, rs) => {
     }
     val++;
     await redisSet(`installs:${rq.params.pluginName}`, val.toString());
-    await updatePluginMetadata(rq.params.pluginName);
+    await updateDefaultPluginCache(rq.params.pluginName);
     rs.json(val);
 });
 
+/**
+ * List all plugins (as {@type PluginInfo[]})
+ */
 app.get('/plugins', async (rq, rs) => {
     // update plugins data
     if (Date.now() - lastUpdateTime >= updateIntervalSec * 1000 || rq.query.refreshCache) {
-        await updatePluginsMap();
+        await updatePluginCache();
     }
 
     if (rq.query.proxy && rq.query.proxy == 'true') {
