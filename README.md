@@ -8,6 +8,11 @@ Key features:
 - download counting
 - ability to proxy download of registered plugins through server
 
+How to add a new plugin to registry?
+---
+
+Create PR to this repository with `registry.json` containing your plugin data. More info in **Configuration** section below.
+
 
 Configuration
 ---
@@ -16,15 +21,19 @@ Each registered plugin should be described in committed `registry.json` file. It
 interface RegistryEntry {
     // internal name (should be unique)
     InternalName: string,
-    
+  
+    // path to module.json
+    Module: string
+
     // path to plugin image
     ImageUrl?: string,
     
     // path to readme file
     Readme?: string,
-    
-    // path to module.json
-    Module: string
+  
+    // release date. Please use ISO 8601 format.
+    // This is optional and will be overriden by ReleaseDate of plugin's module.json.
+    ReleaseDate?: string    
 }
 ```
 
