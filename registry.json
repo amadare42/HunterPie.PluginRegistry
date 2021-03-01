@@ -41,4 +41,8 @@
   "ImageUrl": "https://raw.githubusercontent.com/Haato3o/DecorationSearch/master/DecorationSearch/Assets/icon.png",
   "Module": "https://github.com/Haato3o/DecorationSearcher/releases/latest/download/module.json",
   "ReleaseDate": "2021-02-14"
+}, {
+  "InternalName": "ComboMeter",
+  "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.ComboMeterPlugin/master/readme.md",
+  "Module": "https://github.com/amadare42/HunterPie.ComboMeterPlugin/releases/download/v0.1.0.0/module.json"
 }]
