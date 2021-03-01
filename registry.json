@@ -44,5 +44,6 @@
 }, {
   "InternalName": "ComboMeter",
   "Readme": "https://raw.githubusercontent.com/amadare42/HunterPie.ComboMeterPlugin/master/readme.md",
+  "ImageUrl": "https://github.com/amadare42/HunterPie.ComboMeterPlugin/raw/master/ComboMeter/icon.png",
   "Module": "https://github.com/amadare42/HunterPie.ComboMeterPlugin/releases/download/v0.1.0.0/module.json"
 }]
