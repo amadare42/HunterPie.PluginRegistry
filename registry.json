@@ -9,6 +9,12 @@
   "Module": "https://raw.githubusercontent.com/Haato3o/HunterPie.Plugins/master/DiscordWebhook/module.json",
   "ReleaseDate": "2020-12-30"
 }, {
+   "InternalName": "DiscordHelper",
+  "Readme": "https://raw.githubusercontent.com/callumc34/HunterPie.DiscordHelper/master/README.md",
+  "ImageUrl": "https://raw.githubusercontent.com/callumc34/HunterPie.DiscordHelper/master/plugin/icon.png",
+  "Module": "https://raw.githubusercontent.com/callumc34/HunterPie.DiscordHelper/master/plugin/module.json",
+  "ReleaseDate": "2021-03-21"
+}, {
   "InternalName": "DamageChat",
   "Readme": "https://raw.githubusercontent.com/ricochhet/HunterPie.DamageChat/master/README.md",
   "Module": "https://raw.githubusercontent.com/ricochhet/HunterPie.DamageChat/master/binaries/module.json",
