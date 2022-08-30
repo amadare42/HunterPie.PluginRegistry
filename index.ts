@@ -35,7 +35,7 @@ app.set('json spaces', 2);
  * Using module.json stream to update cache data.
  * @param res module.json stream (json string of {@type Module})
 */
-function pluginPassThrough(res: Readable) {
+function pluginPassThrough(res: IncomingMessage) {
     const copyStream = res.pipe(new PassThrough());
     const chunks = []
     copyStream.on('data', c => chunks.push(c))
@@ -45,6 +45,7 @@ function pluginPassThrough(res: Readable) {
             const plugin = JSON.parse(jsonString) as Module;
             await updateDefaultPluginCache(plugin.Name);
         } catch(e) {
+            console.error("Error on updating plugin cache")
             console.log(jsonString);
             throw e;
         }
@@ -67,6 +68,11 @@ async function getDownloads(internalName: string) {
     }
 }
 
+function getHttp(isHttps: boolean) {
+    const pkg = require('follow-redirects');
+    return isHttps ? pkg.https : pkg.http;
+}
+
 /**
  * Proxy request http request to url.
  * @param url target url
@@ -77,7 +83,7 @@ async function getDownloads(internalName: string) {
 async function proxyGet(url: string, client_req: express.Request, client_res: express.Response, cb?: (res: IncomingMessage) => void) {
     console.log("Proxying request to " + url);
 
-    const proxy = (url.startsWith("https") ? require('https') : require('http')).request(url, function (res) {
+    const proxy = getHttp(url.startsWith("https")).request(url, function (res) {
         client_res.writeHead(res.statusCode, res.headers);
         cb && cb(res);
         res.pipe(client_res, {
