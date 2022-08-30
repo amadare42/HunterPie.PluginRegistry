@@ -40,7 +40,7 @@ interface RegistryEntry {
 **Environment variables:**
 - PORT - port where application is hosted. Heroku will provide it automatically
 - HEROKU_APP_NAME - heroku name of the application. Used to create correct proxy links. This will be provided by Heroku if https://devcenter.heroku.com/articles/dyno-metadata is enabled
-- REDISTOGO_URL - connection string for redis DB. This will be provided automatically by https://elements.heroku.com/addons/redistogo addon
+- REDISCLOUD_URL - connection string for redis DB
 - UPDATE_INTERVAL_SEC - how often to invalidate plugin cache
 
 Endpoints

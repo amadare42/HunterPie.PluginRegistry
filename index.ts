@@ -15,7 +15,7 @@ const baseAddress = process.env.HEROKU_APP_NAME
     ? `https://${process.env.HEROKU_APP_NAME}.herokuapp.com`
     : `http://localhost:${port}`;
 const updateIntervalSec = process.env.UPDATE_INTERVAL_SEC ? parseInt(process.env.UPDATE_INTERVAL_SEC) : 100;
-const redisClient = redis.createClient(process.env.REDISTOGO_URL);
+const redisClient = redis.createClient(process.env.REDISCLOUD_URL);
 
 // "Thank you", official redis library that doesn't support promises in 2021 -_-
 function bind<T extends Function>(fn: Function, obj: any) {
