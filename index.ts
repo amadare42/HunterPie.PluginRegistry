@@ -41,8 +41,13 @@ function pluginPassThrough(res: Readable) {
     copyStream.on('data', c => chunks.push(c))
     copyStream.on('end', async () => {
         const jsonString = Buffer.concat(chunks).toString('utf8');
-        const plugin = JSON.parse(jsonString) as Module;
-        await updateDefaultPluginCache(plugin.Name);
+        try {
+            const plugin = JSON.parse(jsonString) as Module;
+            await updateDefaultPluginCache(plugin.Name);
+        } catch(e) {
+            console.log(jsonString);
+            throw e;
+        }
     });
 }
 
