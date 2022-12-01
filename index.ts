@@ -1,30 +1,38 @@
+import { RedisCountRepository } from './repository/redisCountRepository';
 import * as express from 'express';
 import { getLastUrlPart, removeUrlLastPart, trim } from './util';
 import * as https from 'https';
-import { PassThrough, Readable } from 'stream';
+import { PassThrough } from 'stream';
 import { IncomingMessage } from 'http';
 import axios from 'axios';
 import { Module, PluginInfo, RegistryEntry } from './model';
-import * as redis from 'redis';
-import { promisify } from 'util';
+import { MongoCountRepository } from './repository/mongoCountRepository';
+
+require('dotenv').config();
 
 let lastUpdateTime = 0;
 
 const port = process.env.PORT || 5002;
 const baseAddress = process.env.HEROKU_APP_NAME
-    ? `https://${process.env.HEROKU_APP_NAME}.herokuapp.com`
-    : `http://localhost:${port}`;
+    ? `https://${ process.env.HEROKU_APP_NAME }.herokuapp.com`
+    : process.env.APP_URL
+        ? process.env.APP_URL
+        : `http://localhost:${ port }`;
 const updateIntervalSec = process.env.UPDATE_INTERVAL_SEC ? parseInt(process.env.UPDATE_INTERVAL_SEC) : 100;
-const redisClient = redis.createClient(process.env.REDISCLOUD_URL);
 
-// "Thank you", official redis library that doesn't support promises in 2021 -_-
-function bind<T extends Function>(fn: Function, obj: any) {
-    return fn.bind(obj) as T;
+const redisRepo = new RedisCountRepository(process.env.REDISCLOUD_URL);
+const mongoRepo = new MongoCountRepository(process.env.MONGO_CONNECTION_STRING);
+
+let useMongo = process.env.USE_MONGO == 'true';
+const countRepo = useMongo ? mongoRepo : redisRepo;
+if (useMongo) {
+    console.log("Using mongo");
+} else {
+    console.log("using redis");
 }
-const redisGet = bind(promisify(redisClient.get), redisClient);
-const redisSet = bind(promisify(redisClient.set), redisClient);
 
-const registry = require("./registry.json") as RegistryEntry[];
+
+const registry = require('./registry.json') as RegistryEntry[];
 const plugins = new Map<string, PluginInfo>();
 const proxyPlugins = new Map<string, PluginInfo>();
 
@@ -34,7 +42,7 @@ app.set('json spaces', 2);
 /**
  * Using module.json stream to update cache data.
  * @param res module.json stream (json string of {@type Module})
-*/
+ */
 function pluginPassThrough(res: IncomingMessage) {
     const copyStream = res.pipe(new PassThrough());
     const chunks = []
@@ -44,8 +52,8 @@ function pluginPassThrough(res: IncomingMessage) {
         try {
             const plugin = JSON.parse(jsonString) as Module;
             await updateDefaultPluginCache(plugin.Name);
-        } catch(e) {
-            console.error("Error on updating plugin cache")
+        } catch (e) {
+            console.error('Error on updating plugin cache')
             console.log(jsonString);
             throw e;
         }
@@ -58,11 +66,7 @@ function pluginPassThrough(res: IncomingMessage) {
  */
 async function getDownloads(internalName: string) {
     try {
-        let val = parseInt(await redisGet(`installs:${ internalName }`));
-        if (isNaN(val)) {
-            return 0;
-        }
-        return val;
+        return countRepo.get(internalName);
     } catch {
         return 0;
     }
@@ -81,9 +85,9 @@ function getHttp(isHttps: boolean) {
  * @param cb passthgough handler
  */
 async function proxyGet(url: string, client_req: express.Request, client_res: express.Response, cb?: (res: IncomingMessage) => void) {
-    console.log("Proxying request to " + url);
+    console.log('Proxying request to ' + url);
 
-    const proxy = getHttp(url.startsWith("https")).request(url, function (res) {
+    const proxy = getHttp(url.startsWith('https')).request(url, function (res) {
         client_res.writeHead(res.statusCode, res.headers);
         cb && cb(res);
         res.pipe(client_res, {
@@ -107,7 +111,7 @@ async function updatePluginCache() {
         updateProxyPluginCache(name);
     }
     lastUpdateTime = Date.now();
-    console.log("registry updated", Array.from(plugins.values()));
+    console.log('registry updated', Array.from(plugins.values()));
 }
 
 /**
@@ -131,7 +135,7 @@ async function updateDefaultPluginCache(internalName: string) {
             ReleaseDate: module.ReleaseDate || entry.ReleaseDate
         });
     } catch (e) {
-        console.error(`Update plugin '${internalName}' failed:`, e.toString());
+        console.error(`Update plugin '${ internalName }' failed:`, e.toString());
 
         plugins.set(internalName, {
             ...entry,
@@ -176,7 +180,7 @@ app.get('/plugin/:pluginName/:part/*', async (rq, rs) => {
     const plugin = registry.find(m => m.InternalName == pluginName);
     if (!plugin) {
         rs.status(404).send();
-        console.log(`Cannot find plugin with name ${pluginName}`)
+        console.log(`Cannot find plugin with name ${ pluginName }`)
         return;
     }
     switch (part.toLowerCase()) {
@@ -184,13 +188,13 @@ app.get('/plugin/:pluginName/:part/*', async (rq, rs) => {
             if (rest.toLowerCase().endsWith('readme.md')) {
                 await proxyGet(plugin.Readme, rq, rs);
             } else {
-                let url = [trim(removeUrlLastPart(plugin.Readme), '/'), rest].join("/");
+                let url = [trim(removeUrlLastPart(plugin.Readme), '/'), rest].join('/');
                 await proxyGet(url, rq, rs);
             }
             return;
 
         case 'module': {
-            let url = [trim(removeUrlLastPart(plugin.Module), '/'), rest].join("/");
+            let url = [trim(removeUrlLastPart(plugin.Module), '/'), rest].join('/');
             if (url.toLowerCase() == plugin.Module.toLowerCase()) {
                 await proxyGet(plugin.Module, rq, rs, pluginPassThrough);
             } else {
@@ -213,13 +217,7 @@ app.post('/plugin/:pluginName/install', async (rq, rs) => {
             .status(404)
         return;
     }
-    var result = await redisGet(`installs:${rq.params.pluginName}`);
-    let val = parseInt(result);
-    if (isNaN(val)) {
-        val = 0;
-    }
-    val++;
-    await redisSet(`installs:${rq.params.pluginName}`, val.toString());
+    let val = countRepo.inc(rq.params.pluginName);
     await updateDefaultPluginCache(rq.params.pluginName);
     rs.json(val);
 });
@@ -238,9 +236,26 @@ app.get('/plugins', async (rq, rs) => {
     } else {
         rs.status(200).json(Array.from(plugins.values()));
     }
-
 });
+
+app.get('/admin/redisImport', async (rq, rs) => {
+    const key = rq.query.key;
+    const name = rq.query.name;
+    if (!key || key != process.env.IMPORT_KEY) {
+        rs.status(400).send("'key' is missing or invalid, import cancelled");
+        return;
+    }
+
+    if (!name || typeof name != 'string') {
+        rs.status(400).send("name is missing or invalid, import cancelled");
+        return;
+    }
+
+    const installs = await redisRepo.getInstalls();
+    const result = await mongoRepo.applyImport(name, installs);
+    rs.json(result);
+})
 
 app.get('/ping', (rs, rq) => rq.send('pong'));
 
-app.listen(port,() => console.log(`Listening on ${baseAddress}...`));
+app.listen(port, () => console.log(`Listening on ${ baseAddress }...`));

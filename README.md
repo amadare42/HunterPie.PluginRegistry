@@ -42,6 +42,10 @@ interface RegistryEntry {
 - HEROKU_APP_NAME - heroku name of the application. Used to create correct proxy links. This will be provided by Heroku if https://devcenter.heroku.com/articles/dyno-metadata is enabled
 - REDISCLOUD_URL - connection string for redis DB
 - UPDATE_INTERVAL_SEC - how often to invalidate plugin cache
+- APP_URL - full app url. Used after transition from heroku
+- USE_MONGO - if 'true', mongo will be used isntead of redis to track installs count
+- MONGO_CONNECTION_STRING - connection string to MongoDB
+- IMPORT_KEY - defines secret key that is used as a password to import data from redis to mongo
 
 Endpoints
 ---
@@ -53,6 +57,7 @@ Endpoints
     - query parameter `proxy` will by using proxy metadata
 - GET `/plugin/:pluginName/module/<path>` will return file by `<path>` based from root of configured `module.json` path
 - GET `/plugin/:pluginName/readme/<path>` will return file by `<path>` based from root of configured readme path
+- GET `/admin/redisImport?key=<IMPORT_KEY>&name=<name of import>` triggers import download count from redis to mongo
 
 Plugin object model:
 ```ts
